@@ -1,17 +1,19 @@
 require 'pg'
 require './lib/station'
 require './lib/line'
+require './lib/color'
+
 
 DB = PG.connect({:dbname => 'train_system'})
 
 def welcome
-  puts "                                       (@@@)     (@@@@@)"
+  puts "\e[5;90m\n                                       (@@@)     (@@@@@)"
   puts "                                 (@@)     (@@@@@@@)        (@@@@@@@)"
   puts "                           (@@@@@@@)   (@@@@@)       (@@@@@@@@@@@)"
   puts "                      (@@@)     (@@@@@@@)   (@@@@@@)             (@@@)"
   puts "                 (@@@@@@)    (@@@@@@)                (@)"
   puts "             (@@@)  (@@@@)           (@@)"
-  puts "          (@@)              (@@@)"
+  puts "          (@@)              (@@@)\e[0;31m"
   puts "         .-.               "
   puts "         ] [    .-.      _    .-----."
   puts "       .\"   \"\"\"\"   \"\"\"\"\"\" \"\"\"\"| .--`"
@@ -19,12 +21,12 @@ def welcome
   puts "       |C&O  :  :  :  :  :  : [_9_] |'='|.----------------------.|"
   puts "      /|.___________________________|___|'--.___.--.___.--.___.-'| "
   puts "     / ||_.--.______.--.______.--._ |---\\'--\\-.-/==\\-.-/==\\-.-/-'/--"
-  puts "    /__;^=(==)======(==)======(==)=^~^^^ ^^^^(-)^^^^(-)^^^^(-)^^^"
+  puts "    /__;^=(==)======(==)======(==)=^~^^^ ^^^^(-)^^^^(-)^^^^(-)^^^\e[0m"
   puts "  ~~~^~~~~^~~~^~~~^~~~^~~~^~~~^~~~^~~~^~~~^~~~^~~~^~~~^~~~^~~~^~~~^~~~^~~"
 
   puts "\n\ns - system operator"
   puts "p - passenger"
-  puts "x - exit"
+  puts "x - exit\n\n"
   input = gets.chomp
   system "clear"
   if input == "s"
@@ -51,7 +53,7 @@ def system_operator_menu
   puts "lu - update line"
   puts "ld - destroy line\n\n"
 
-  puts 'm - main menu'
+  puts "m - main menu\n\n"
   input = gets.chomp
   system "clear"
 
@@ -84,9 +86,9 @@ def system_operator_menu
 end
 
 def passenger_menu
-  puts 's - view stations'
-  puts 'l - view lines'
-  puts 'm - main menu'
+  puts "s - view stations"
+  puts "l - view lines"
+  puts "m - main menu\n\n"
 
   input = gets.chomp
 
@@ -95,8 +97,10 @@ def passenger_menu
   elsif input == 'l'
     passenger_lines
   elsif input == 'm'
+    system "clear"
     welcome
   else
+    system "clear"
     'invalid input'
     passenger_menu
   end
@@ -107,13 +111,14 @@ def passenger_stations
 
   puts "******************************"
   puts "v - select number to view station lines"
-  puts "b - back"
+  puts "b - back\n\n"
 
   input = gets.chomp
 
   if input == 'v'
-
+    list_stops
   elsif input == 'b'
+    system "clear"
     passenger_menu
   else
     puts 'invalid input'
@@ -121,10 +126,26 @@ def passenger_stations
   end
 end
 
+def list_stops
+  read_line
+
+  puts "Enter the number of the line to view its stops."
+  input = gets.chomp.to_i
+
+  line = Line.all[input-1]
+  system "clear"
+  puts "All stops: "
+  line.stops.each do |stop|
+    puts "#{stop['name']}"
+  end
+  puts "***********************"
+  passenger_stations
+end
+
 def view_station_lines
   read_station
   puts "******************************"
-  puts 'Enter a station number to view its lines'
+  puts "Enter a station number to view its lines\n\n"
 
   input = gets.chomp.to_i
 
@@ -137,7 +158,7 @@ def passenger_lines
   read_line
 end
 def create_station
-  puts 'Name of new station: '
+  puts "Name of new station: \n\n"
   station_name = gets.chomp
   system "clear"
   new_station = Station.new({:name => station_name})
@@ -156,13 +177,13 @@ end
 def update_station
   read_station
   puts "*************************************"
-  puts "Choose a station number to update"
+  puts "Choose a station number to update\n\n"
 
   input = gets.chomp.to_i
 
   to_update = Station.all[input-1]
 
-  puts "New name: "
+  puts "New name: \n\n"
   new_name = gets.chomp
   to_update.update(new_name)
   system "clear"
@@ -176,7 +197,7 @@ end
 def destroy_station
   read_station
   puts "*************************************"
-  puts "Choose a station number to delete: "
+  puts "Choose a station number to delete: \n\n"
 
   input = gets.chomp.to_i
 
@@ -191,7 +212,7 @@ def destroy_station
 end
 
 def create_line
-  puts 'Name of new line: '
+  puts "Name of new line: \n\n"
   line_name = gets.chomp
   system "clear"
   new_line = Line.new({:name => line_name})
@@ -203,20 +224,52 @@ end
 def update_line
   read_line
   puts "*************************************"
-  puts "Choose a line number to update"
+  puts "Choose a line number to update name or add a stop\n\n"
 
   input = gets.chomp.to_i
 
   to_update = Line.all[input-1]
 
-  puts "New name: "
+  puts "e - edit name"
+  puts "s - add stop to line\n\n"
+  input2 = gets.chomp
+
+  if input2 == 'e'
+    edit_line_name(to_update)
+  elsif input2 == 's'
+    add_line_stop(to_update)
+  else
+    system "clear"
+    puts 'invalid entry'
+    update_line
+  end
+
+end
+
+def edit_line_name(update_name)
+  puts "New name: \n\n"
   new_name = gets.chomp
-  to_update.update(new_name)
+  update_name.update(new_name)
   system "clear"
   puts "*************************************"
   puts "Name updated to: #{new_name}"
   puts "*************************************"
 
+  system_operator_menu
+end
+
+def add_line_stop(adding_stop)
+  read_station
+  puts "New stop: "
+  input = gets.chomp.to_i
+
+  to_add = Station.all[input-1]
+  adding_stop.add_stop(to_add)
+  system "clear"
+  puts "*******************************"
+  puts "Your stop has been added, thank you for creating a new destination for customers, they greatly appreciate it"
+  puts "*******************************"
+  puts "they really do appreciate it!"
   system_operator_menu
 end
 
@@ -230,7 +283,7 @@ end
 def destroy_line
   read_line
   puts "*************************************"
-  puts "Choose a line number to delete: "
+  puts "Choose a line number to delete: \n\n"
 
   input = gets.chomp.to_i
 

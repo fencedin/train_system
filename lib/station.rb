@@ -1,10 +1,14 @@
 require 'pg'
+require 'pry'
+
 
 class Station
   attr_reader :name, :id
 
   def initialize(station_info)
     @name = station_info[:name]
+    @id = station_info[:id]
+
   end
 
   def self.all
@@ -12,7 +16,8 @@ class Station
     stations = []
     results.each do |result|
       name = result['name']
-      stations << Station.new({:name => name})
+      id = result['id']
+      stations << Station.new({:name => name, :id => id})
     end
     stations
   end
